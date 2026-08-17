@@ -1,6 +1,12 @@
 name: Publish compact EPG
 
 on:
+  push:
+    branches:
+      - master
+    paths:
+      - ".github/workflows/publish-compact-epg.yml"
+      - "tools/**"
   schedule:
     - cron: "17 */6 * * *"
   workflow_dispatch:
