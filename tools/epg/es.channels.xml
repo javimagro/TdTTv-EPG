@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<channels>
+  <channel site="programacion-tv.elpais.com" site_id="3" lang="es" xmltv_id="La1.es@SD">La 1</channel>
+  <channel site="programacion-tv.elpais.com" site_id="4" lang="es" xmltv_id="La2.es@SD">La 2</channel>
+  <channel site="programacion-tv.elpais.com" site_id="2" lang="es" xmltv_id="Antena3.es@National">Antena 3</channel>
+  <channel site="programacion-tv.elpais.com" site_id="496" lang="es" xmltv_id="Cuatro.es@SD">Cuatro</channel>
+  <channel site="programacion-tv.elpais.com" site_id="1" lang="es" xmltv_id="Telecinco.es@SD">Telecinco</channel>
+  <channel site="programacion-tv.elpais.com" site_id="510" lang="es" xmltv_id="LaSexta.es@SD">laSexta</channel>
+  <channel site="programacion-tv.elpais.com" site_id="883" lang="es" xmltv_id="Atreseries.es@SD">Atreseries</channel>
+  <channel site="programacion-tv.elpais.com" site_id="841" lang="es" xmltv_id="Mega.es@SD">Mega</channel>
+  <channel site="programacion-tv.elpais.com" site_id="508" lang="es" xmltv_id="Neox.es@SD">Neox</channel>
+  <channel site="programacion-tv.elpais.com" site_id="509" lang="es" xmltv_id="Nova.es@SD">Nova</channel>
+  <channel site="programacion-tv.elpais.com" site_id="506" lang="es" xmltv_id="FactoriadeFiccion.es@SD">FDF Telecinco</channel>
+  <channel site="programacion-tv.elpais.com" site_id="697" lang="es" xmltv_id="Divinity.es@SD">Divinity</channel>
+  <channel site="programacion-tv.elpais.com" site_id="709" lang="es" xmltv_id="Energy.es@SD">Energy</channel>
+  <channel site="programacion-tv.elpais.com" site_id="890" lang="es" xmltv_id="BeMad.es@SD">Be Mad</channel>
+  <channel site="programacion-tv.elpais.com" site_id="665" lang="es" xmltv_id="Boing.es@SD">Boing</channel>
+</channels>

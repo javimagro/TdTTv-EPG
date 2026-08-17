@@ -1,0 +1,77 @@
+name: Publish compact EPG
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-compact-epg
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout EPG publisher
+        uses: actions/checkout@v4
+
+      - name: Configure Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Configure Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Checkout official IPTV-org EPG tools
+        uses: actions/checkout@v4
+        with:
+          repository: iptv-org/epg
+          ref: master
+          path: external/iptv-org-epg
+          fetch-depth: 1
+
+      - name: Install IPTV-org dependencies
+        working-directory: external/iptv-org-epg
+        run: npm ci
+
+      - name: Download selected Spanish schedules
+        working-directory: external/iptv-org-epg
+        run: >-
+          npm run grab ---
+          --channels=../../tools/epg/es.channels.xml
+          --output=../../.tmp/epg-source/es.xml
+          --days=2
+          --maxConnections=1
+
+      - name: Download country EPG sources
+        run: |
+          mkdir -p .tmp/epg-source
+          curl --fail --location --retry 3 --output .tmp/epg-source/pt.xml.gz https://iptv-epg.org/files/epg-pt.xml.gz
+          curl --fail --location --retry 3 --output .tmp/epg-source/de.xml.gz https://epgshare01.online/epgshare01/epg_ripper_DE1.xml.gz
+          curl --fail --location --retry 3 --output .tmp/epg-source/fr.xml.gz https://epgshare01.online/epgshare01/epg_ripper_FR1.xml.gz
+          curl --fail --location --retry 3 --output .tmp/epg-source/it.xml.gz https://epgshare01.online/epgshare01/epg_ripper_IT1.xml.gz
+          curl --fail --location --retry 3 --output .tmp/epg-source/uk.xml.gz https://iptv-epg.org/files/epg-gb.xml.gz
+
+      - name: Build and validate country artifacts
+        run: |
+          python tools/publish_compact_epg.py --country es --input .tmp/epg-source/es.xml --output-dir .tmp/epg-publish
+          for country in pt de fr it uk; do
+            python tools/publish_compact_epg.py --country "$country" --input ".tmp/epg-source/$country.xml.gz" --output-dir .tmp/epg-publish
+          done
+
+      - name: Publish last-known-good EPG branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: epg-data
+          publish_dir: .tmp/epg-publish
+          force_orphan: true
