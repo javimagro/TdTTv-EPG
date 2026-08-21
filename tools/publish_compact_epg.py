@@ -7,6 +7,8 @@ import hashlib
 import json
 import shutil
 import struct
+import unicodedata
+from collections import defaultdict
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
@@ -23,6 +25,8 @@ from epg_format import (
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = ROOT / "tools" / "epg" / "generalist_channels.json"
+FANART_MAGIC = 0x54444641
+FANART_VERSION = 1
 
 
 def parse_args():
@@ -31,6 +35,7 @@ def parse_args():
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--input", type=Path)
     source.add_argument("--input-binary", type=Path)
+    parser.add_argument("--fanart-input", type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--asset-output", type=Path)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
@@ -115,6 +120,96 @@ def normalized_index(schedules):
     return result
 
 
+def normalize_program_title(value):
+    decomposed = unicodedata.normalize("NFKD", value or "")
+    return "".join(character.lower() for character in decomposed if character.isalnum())
+
+
+def valid_image_url(value):
+    normalized = (value or "").strip()
+    if len(normalized) > 2048:
+        return ""
+    if not normalized.startswith(("https://", "http://")):
+        return ""
+    return normalized
+
+
+def fanart_schedule_for_channel(source, channel):
+    candidate_ids = channel.get("sourceIds", []) + [channel["epgId"]]
+    return next(
+        (source.get(normalize_schedule_key(candidate)) for candidate in candidate_ids
+         if source.get(normalize_schedule_key(candidate)) is not None),
+        None,
+    )
+
+
+def secondary_fanart_index(schedule):
+    result = defaultdict(list)
+    if schedule is None:
+        return result
+    for program in schedule.programs:
+        image_url = valid_image_url(program[3])
+        title_key = normalize_program_title(program[0])
+        if image_url and title_key:
+            result[title_key].append(program)
+    return result
+
+
+def select_secondary_fanart(program, candidates):
+    best_url = ""
+    best_overlap = 0.0
+    closest_url = ""
+    closest_start_difference = float("inf")
+    for candidate in candidates:
+        overlap = min(program[5], candidate[5]) - max(program[4], candidate[4])
+        overlap_seconds = overlap.total_seconds()
+        if overlap_seconds > best_overlap:
+            best_url = valid_image_url(candidate[3])
+            best_overlap = overlap_seconds
+        start_difference = abs((program[4] - candidate[4]).total_seconds())
+        if start_difference < closest_start_difference:
+            closest_url = valid_image_url(candidate[3])
+            closest_start_difference = start_difference
+    return best_url or closest_url
+
+
+def build_fanart_entries(compact, channels, fanart_schedules):
+    entries = []
+    fanart_source = normalized_index(fanart_schedules)
+    for channel in channels:
+        epg_id = channel["epgId"]
+        schedule = compact.get(epg_id)
+        if schedule is None:
+            continue
+        secondary = secondary_fanart_index(
+            fanart_schedule_for_channel(fanart_source, channel))
+        for program in schedule.programs:
+            image_url = valid_image_url(program[3])
+            if not image_url:
+                title_key = normalize_program_title(program[0])
+                image_url = select_secondary_fanart(program, secondary.get(title_key, []))
+            if image_url:
+                entries.append((epg_id, int(program[4].timestamp() * 1000), image_url))
+    entries.sort(key=lambda entry: (entry[0], entry[1], entry[2]))
+    return entries
+
+
+def write_binary_string(stream, value):
+    encoded = value.encode("utf-8")
+    stream.write(struct.pack(">i", len(encoded)))
+    stream.write(encoded)
+
+
+def write_fanart_gzip(entries, destination):
+    with destination.open("wb") as output_stream:
+        with gzip.GzipFile(fileobj=output_stream, mode="wb", filename="", mtime=0) as stream:
+            stream.write(struct.pack(">iii", FANART_MAGIC, FANART_VERSION, len(entries)))
+            for channel_id, start_ms, image_url in entries:
+                write_binary_string(stream, channel_id)
+                stream.write(struct.pack(">q", start_ms))
+                write_binary_string(stream, image_url)
+
+
 def compact_schedules(schedules, channels):
     source = normalized_index(schedules)
     compact = {}
@@ -188,6 +283,9 @@ def main():
         schedules = parse_xmltv_schedules(args.input.resolve().as_uri())
         source_description = "XMLTV source"
     compact = compact_schedules(schedules, config[args.country])
+    fanart_schedules = schedules
+    if args.fanart_input:
+        fanart_schedules = parse_xmltv_schedules(args.fanart_input.resolve().as_uri())
 
     output_dir = args.output_dir.resolve() / "epg" / args.country
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -196,6 +294,13 @@ def main():
     write_epg(binary_path, compact)
     gzip_file(binary_path, compressed_path)
     write_compact_xml_gzip(compact, config[args.country], output_dir / "guide.xml.gz")
+    fanart_entries = build_fanart_entries(
+        compact,
+        config[args.country],
+        fanart_schedules,
+    )
+    fanart_path = output_dir / "fanart.bin.gz"
+    write_fanart_gzip(fanart_entries, fanart_path)
 
     version = hashlib.sha256(compressed_path.read_bytes()).hexdigest()
     unique_schedules = {id(schedule): schedule for schedule in compact.values()}
@@ -208,6 +313,9 @@ def main():
         "compressedBytes": compressed_path.stat().st_size,
         "uncompressedBytes": binary_path.stat().st_size,
         "source": source_description,
+        "fanartVersion": hashlib.sha256(fanart_path.read_bytes()).hexdigest(),
+        "fanartPrograms": len(fanart_entries),
+        "fanartCompressedBytes": fanart_path.stat().st_size,
     }
     (output_dir / "version.json").write_text(
         json.dumps(marker, ensure_ascii=False, indent=2) + "\n",

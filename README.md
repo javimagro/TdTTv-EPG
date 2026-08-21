@@ -19,10 +19,13 @@ Cada país se genera y distribuye de forma independiente en la rama `epg-data`:
 ```text
 epg/<country>/epg.bin.gz
 epg/<country>/guide.xml.gz
+epg/<country>/fanart.bin.gz
 epg/<country>/version.json
 ```
 
-La aplicación consulta `version.json` y solo descarga el EPG del país activo.
+La aplicación consulta `version.json` y solo descarga el EPG y el manifiesto de
+fanart del país activo. El manifiesto de imágenes es independiente para que su
+descarga y precarga se hagan después de mostrar la pantalla principal.
 Al cambiar de país descarga el correspondiente y lo conserva para el siguiente
 arranque.
 
