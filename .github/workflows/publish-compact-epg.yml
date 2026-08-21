@@ -61,6 +61,7 @@ jobs:
       - name: Download country EPG sources
         run: |
           mkdir -p .tmp/epg-source
+          curl --fail --location --retry 3 --output .tmp/epg-source/es-fanart.xml.gz https://iptv-epg.org/files/epg-es.xml.gz
           curl --fail --location --retry 3 --output .tmp/epg-source/pt.xml.gz https://iptv-epg.org/files/epg-pt.xml.gz
           curl --fail --location --retry 3 --output .tmp/epg-source/de.xml.gz https://epgshare01.online/epgshare01/epg_ripper_DE1.xml.gz
           curl --fail --location --retry 3 --output .tmp/epg-source/fr.xml.gz https://epgshare01.online/epgshare01/epg_ripper_FR1.xml.gz
@@ -69,7 +70,8 @@ jobs:
 
       - name: Build and validate country artifacts
         run: |
-          python tools/publish_compact_epg.py --country es --input .tmp/epg-source/es.xml --output-dir .tmp/epg-publish
+          python tools/test_publish_compact_epg.py
+          python tools/publish_compact_epg.py --country es --input .tmp/epg-source/es.xml --fanart-input .tmp/epg-source/es-fanart.xml.gz --output-dir .tmp/epg-publish
           for country in pt de fr it uk; do
             python tools/publish_compact_epg.py --country "$country" --input ".tmp/epg-source/$country.xml.gz" --output-dir .tmp/epg-publish
           done
