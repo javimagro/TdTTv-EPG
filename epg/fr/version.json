@@ -1,0 +1,13 @@
+{
+  "version": "8d86a62d65e9d69d1be10cb18582c5d732523f584044018fb3691aa34e307bca",
+  "generatedAt": "2026-09-05T15:13:05.772483+00:00",
+  "country": "fr",
+  "channels": 22,
+  "programs": 3160,
+  "compressedBytes": 324996,
+  "uncompressedBytes": 1236322,
+  "source": "XMLTV source",
+  "fanartVersion": "240a4ac5b4e016358b7b54c018c2dd233fa26ed74a8992fe87a06772104ee368",
+  "fanartPrograms": 3148,
+  "fanartCompressedBytes": 41171
+}
