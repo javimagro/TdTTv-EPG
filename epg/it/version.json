@@ -1,0 +1,13 @@
+{
+  "version": "72070d78bc1c87919f2af2614005895778c72a0a4d8869bd0bab77aa22becdae",
+  "generatedAt": "2026-11-14T06:20:34.776838+00:00",
+  "country": "it",
+  "channels": 25,
+  "programs": 2506,
+  "compressedBytes": 203125,
+  "uncompressedBytes": 754729,
+  "source": "XMLTV source",
+  "fanartVersion": "29eed08f3fd94fcf3691e2bee4d0a5ccd858a687af91632130f7d4e181e42912",
+  "fanartPrograms": 1385,
+  "fanartCompressedBytes": 29323
+}
