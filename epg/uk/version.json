@@ -1,0 +1,13 @@
+{
+  "version": "0e28b323d49477e20c3927275a3a4cb0179479c4126cbd2fb1c2eb42fc492abb",
+  "generatedAt": "2026-11-21T07:05:58.225402+00:00",
+  "country": "uk",
+  "channels": 26,
+  "programs": 4061,
+  "compressedBytes": 1468918,
+  "uncompressedBytes": 2508138,
+  "source": "XMLTV source",
+  "fanartVersion": "acf879f7c793886aff83630049486283c19292957fd8ec5614ef51387f2eb44a",
+  "fanartPrograms": 4061,
+  "fanartCompressedBytes": 1059509
+}
